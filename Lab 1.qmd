@@ -4,23 +4,28 @@ format: html
 editor: visual
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
 
 ```{r}
-1 + 1
+library(tidyverse)
+library(purrr)
+library(readr)
 ```
 
-You can add options to executable code like this
 
-```{r}
-#| echo: false
-2 * 2
+##Question 1
+```{r Q-Q Plot Function}
+#X and Y numeric vectors, must be of same length
+QQPlot_func <- function(x, y) {
+  stopifnot(length(x) == length(y))
+  
+  
+}
+
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+```{r Testing Q-Q Plot Function}
+x <- rnorm(n = 50, mean = 10, sd = 2)
+y <- rnorm(n = 50, mean = 10, sd = 2)
+
+```
+
