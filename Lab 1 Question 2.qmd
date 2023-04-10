@@ -1,0 +1,50 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+---
+
+## Question 2
+
+```{r}
+library(tidyverse)
+library(purrr)
+library(readr)
+```
+
+```{r}
+oscars_data <- read_csv("Oscars-demographics-DFE.csv")
+```
+
+```{r Warmups}
+#1 
+oscars_data |>
+  select(movie, award, year_of_award) |>
+  count(movie) |>
+  slice_max(order_by = n,n = 1)
+
+
+#2
+oscars_data |>
+  filter(award == "Best Actress") |>
+  select(year_of_award, person) |>
+  mutate(person = str_replace(person, "(?s) .*", "")) |>
+  count(person) |>
+  slice_max(order_by = n, n = 1)
+
+#3 - Brandon's Code
+oscars_data |> 
+  mutate(birthplace = ifelse(birthplace=="New York City", "Ny", birthplace),
+         region = sub(".*, ", "", birthplace)) |>
+  count(region) |>
+  filter(n == max(n))
+```
+
+```{r Bootstrapping - Tidy}
+#What is an approximate 95% confidence interval for percent of "Big 5 Award" award winners who are not white?
+
+white_winners <- oscars_data |>
+  filter()
+
+```
+

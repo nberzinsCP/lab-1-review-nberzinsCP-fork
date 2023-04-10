@@ -37,12 +37,10 @@ QQPlot_func <- function(x, y) {
 
 ```{r Testing Q-Q Plot Function}
 
-x <- rnorm(n = 50, mean = 10, sd = 2)
-y <- rnorm(n = 50, mean = 10, sd = 2)
+x <- rnorm(n = 50, mean = 10, sd = 2) 
+y <- rnorm(n = 50, mean = 10, sd = 2) #creating randomized test numerical vectors
 
 my_qq_plot <- QQPlot_func(x, y)
 my_qq_plot
 ```
-
-##Question 2
 
