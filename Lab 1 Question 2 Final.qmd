@@ -1,0 +1,156 @@
+---
+title: "Lab1RMD"
+author: "Brandon Kim, Shreya Ravilla, Gavin Martinez, Nils Berzins"
+date: '2023-04-06'
+output: html_document
+---  
+
+```{r Loading In Necessary Packages}
+library(tidyverse)
+library(ggplot2)
+```
+  
+```{r readcsv}
+df_oscars <- read_csv(here::here("Oscars-demographics-DFE.csv"))
+head(df_oscars)
+```
+
+
+```{r warmup 1 tidy}
+df_oscars |> #only the 5 unique awards are listed in this dataset so there is no need to filter by them
+  group_by(movie) |>
+  summarise(unique = nlevels(factor(award))) |> #nlevels is a get around to being unable to use count() or n() on the character vector movie
+  filter(unique == max(unique))
+```
+
+
+```{r warmup 1 base}
+oscars_grouped <- aggregate(award ~ movie, data = df_oscars, FUN = function(x) length(unique(x)))
+oscars_grouped[oscars_grouped$award == max(oscars_grouped$award), ]
+```
+
+
+```{r warmup 2 tidy}
+
+df_oscars |>
+  filter(award == "Best Actress") |>
+  distinct(person) |> #eliminates multiple entries of the same person
+  mutate(first_name = sub(" .*", "", person)) |> #removes last name (if there is one) for each oscar winning actress
+  count(first_name) |>
+  filter(n == max(n))
+  
+```
+
+
+```{r warmup 2 base}
+oscars_actress <- subset(df_oscars, award == "Best Actress")
+oscars_actress <- unique(oscars_actress$person)
+actress_firstname <- sub(" .*", "", oscars_actress)
+num_name <- table(actress_firstname)
+max_name <- max(num_name)
+subset(as.data.frame(num_name), Freq == max_name)
+
+```
+
+```{r warmup 3 tidy}
+df_oscars %>% 
+  mutate(birthplace = ifelse(birthplace=="New York City", "Ny", birthplace), 
+         #changes NYC to Ny so that our region mutation doesnt ignore it
+         region = sub(".*, ", "", birthplace)) %>%
+  count(region) %>%
+  filter(n == max(n))
+```
+
+
+```{r warmup 3 base}
+df_oscars$birthplace <- ifelse(df_oscars$birthplace == "New York City", "Ny", df_oscars$birthplace)
+df_oscars$region <- sub(".*, ", "", df_oscars$birthplace)
+region_counts <- table(df_oscars$region)
+max_region <- names(region_counts)[region_counts == max(region_counts)]
+data.frame(region = max_region, n = max(region_counts))
+```
+
+
+```{r age and gender data cleaning}
+library(lubridate)   
+df_oscars <- df_oscars %>%
+  #assuming all awards were given on Feb 1
+  mutate(award_date = as.Date(paste(as.character(year_of_award), "-02-01", sep = "")), 
+         date_of_birth = as.Date(date_of_birth, "%d-%b-%Y"), 
+         date_of_birth = update(date_of_birth, year = as.numeric(format(date_of_birth, "%Y")) + 
+                                ifelse(as.numeric(format(date_of_birth, "%Y")) < 99, 1900, 0)),
+         age = floor(time_length(difftime(award_date, date_of_birth), "years")), 
+         years_since_inception = year_of_award - 1927)
+```
+
+
+```{r malelm}
+df_males <- df_oscars %>%
+  filter(award %in% c("Best Actor", "Best Supporting Actor")) #using "Actor" category as sorting mechanism for gender
+lm_male <- lm(age ~ years_since_inception, data = df_males)
+summary(lm_male)
+```
+For male actors, our linear model is:
+$$
+\hat{age}=43.47876+0.07471(year)
+$$
+where year is in years after the inception of the Oscars. With a p-value of 0.05551, we can conclude that there is moderate evidence to support that there is a relationship between years after inception and age for male award winners. This means that for every 1 year past inception, the predicted age of Best Actor and Best Supporting Actor winners will go up by 0.07471 years. 
+
+
+```{r femalelm}
+df_females <- df_oscars %>%
+  filter(award %in% c("Best Actress", "Best Supporting Actress")) 
+lm_female <- lm(age ~ years_since_inception, data = df_females)
+summary(lm_female)
+```
+
+For female actors, our linear model is:
+$$
+\hat{age}=35.88847+0.03270(year)
+$$
+where year is in years after the inception of the Oscars. With a p-value of 0.4011, we can conclude that there is very weak evidence to suggest 
+is a relationship between years after inception and age for female award winners. However, if a relationship did exist between typical age and years since inception, we can conclude that for every 1 year past inception, the predicted age of Best Actress and Best Supporting Actress winners will go up by 0.03270 years. 
+
+```{r Bootstrapping}
+#ChatGPT was used as an influence into creating the bootstapping for loop and empty numerical vector below
+
+prop_obs <- mean(df_oscars$race_ethnicity != "White") #finding observed proportion of non-white oscar winners
+prop_obs
+
+B <- 1000 
+
+prop_sim <- numeric(B) #empty vector to be filled
+
+for (i in 1:B) { #bootstrapping 1000 different samples to produce similar proportions of non-white oscar winners
+  sim_sample <- sample_n(df_oscars, size = nrow(df_oscars), replace = TRUE)
+  prop_sim[i] <- mean(sim_sample$race_ethnicity != "White")
+}
+
+#producing our confidence interval
+ci_lower <- quantile(prop_sim, 0.025)
+ci_upper <- quantile(prop_sim, 0.975)
+ci_lower
+ci_upper
+```
+
+Our 95% confidence interval predicts that the true percent for "Big 5 Award" award winners who are not white is between 4.54% and 9.30%. 
+
+``` {r Histogram Tidy}
+# plot histogram of simulated proportions
+ggplot(data.frame(prop_sim), aes(x = prop_sim)) +
+  geom_histogram(binwidth = 0.005, fill = "lightblue", color = "black") +
+  geom_vline(xintercept = prop_obs, color = "red", size = 1) +
+  geom_vline(xintercept = ci_lower, color = "blue", size = 1) +
+  geom_vline(xintercept = ci_upper, color = "blue", size = 1) +
+  scale_x_continuous("Proportion of Non-White Winners", limits = c(0.0, 0.15), expand = c(0,0)) +
+  scale_y_continuous("Count", expand = c(0,0)) +
+  ggtitle("Distribution of Simulated Proportions\nwith 95% CI and Observed Proportion Highlighted") 
+```
+
+```{r Histogram Base}
+hist(prop_sim, col = "lightblue", main = "Distribution of Simulated Proportions", xlab = "Proportion of Non-White Winners")
+abline(v = ci_lower, col = "blue", lwd = 3)
+abline(v = ci_upper, col = "blue", lwd = 3)
+abline(v = prop_obs, col = "red", lwd = 3)
+
+```

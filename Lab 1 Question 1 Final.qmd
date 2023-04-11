@@ -48,7 +48,7 @@ qqcreatebase <- function(x) {
 }
 ```
 
-```{r}
+```{r Testing QQ Plot Functions}
 
 #tidy test
 x <- runif(n = 50, min = 0, max = 20) #creating random non-normal test numerical vector
