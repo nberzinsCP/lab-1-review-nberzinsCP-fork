@@ -43,8 +43,64 @@ oscars_data |>
 ```{r Bootstrapping - Tidy}
 #What is an approximate 95% confidence interval for percent of "Big 5 Award" award winners who are not white?
 
-white_winners <- oscars_data |>
-  filter()
+prop_function <- function(race_data) {
+  
+white_winners <- race_data |>
+  filter(race_ethnicity == "White") |>
+  count() |>
+  as.numeric()
+
+nonwhite_winners <- race_data |>
+  filter(race_ethnicity != "White") |>
+  count() |>
+  as.numeric()
+
+return(nonwhite_winners / white_winners)
+
+}
+
+#old_sample <- oscars_data |>
+#  select(race_ethnicity)
+
+#new_sample <- sample(old_sample, replace = TRUE)
+
+#oscars_data |>
+#  select(race_ethnicity) |>
+#  map_int(.f = prop_function)
+
+```
+
+
+```{r Copied Code from Stack Overflow for Testing}
+
+
+race_ethnicity <- oscars_data |>
+  select(race_ethnicity)
+
+# number of bootstrap replicates
+B <- 100
+
+# create empty storage container
+result_vec <- vector(length=B)
+
+for(b in 1:B) {
+    # draw a bootstrap sample
+    this_sample <- sample(race_ethnicity, size=length(race_ethnicity), replace=TRUE)
+
+    # calculate your statistic
+    m <- prop_function(this_sample)
+
+    # save your calucated statistic
+    result_vec[b] <- m
+}
+
+# then probably draw a histogram of your bootstrapped replicates
+hist(result_vec)
+
+# get 95% confidence interval
+result_vec <- result_vec[order(result_vec)]
+lower_bound <- result_vec[round(0.025*B)]
+upper_bound <- result_vec[round(0.0975*B)]
 
 ```
 
