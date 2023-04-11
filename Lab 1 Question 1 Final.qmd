@@ -1,0 +1,64 @@
+---
+title: "Lab1RMD"
+author: "Brandon Kim, Shreya Ravilla, Gavin Martinez, Nils Berzins"
+date: '2023-04-10'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+library(tidyverse)
+```
+
+
+```{r qqplot function in tidy}
+qqcreatetidy <- function(x) {
+  normalized_values <- sort(rnorm(length(x), mean = mean(x), sd = sd(x))) 
+  # Create a sorted vector of random normally distributed values with the mean and sd of the inputted vector
+  vector <- sort(x)
+  df <- data.frame(vector, normalized_values)
+  # since both vectors are sorted, having them put together in a dataframe will match the values from low to high.
+  
+  plt <- df %>%
+    ggplot(aes(vector, normalized_values)) +
+    geom_point() +
+    geom_abline(intercept = 0, slope = 1) +
+    ggtitle("qqplot")
+  # Create a scatterplot with a line y = x. 
+  
+  return(plt)
+}
+```
+
+
+```{r qqplot function in base}
+qqcreatebase <- function(x) {
+  normalized_values <- sort(rnorm(length(x), mean = mean(x), sd = sd(x))) 
+  # Create a sorted vector of random normally distributed values with the mean and sd of the inputted vector
+  vector <- sort(x)
+  
+  plt <- plot(vector, normalized_values)
+  #with plot, can directly insert our respective x and y values
+  
+  abline(a = 0, b = 1)
+  # add a y = x line
+  
+  title("qqplot")
+  return(plt)
+}
+```
+
+```{r}
+
+#tidy test
+x <- runif(n = 50, min = 0, max = 20) #creating random non-normal test numerical vector
+
+my_qq_plot_tidy <- qqcreatetidy(x)
+
+my_qq_plot_tidy
+
+#base test 
+
+my_qq_plot_base <- qqcreatebase(x)
+```
+
